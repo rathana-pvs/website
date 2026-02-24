@@ -1,54 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="km">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile POS</title>
+    <title>ប្រព័ន្ធលក់ទំនិញ (POS)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #f3f4f6; font-family: sans-serif; }
-        .product-card { transition: transform 0.1s; }
-        .product-card:active { transform: scale(0.95); }
+        body { background-color: #f3f4f6; font-family: 'Kantumruy Pro', sans-serif; }
+        .img-preview { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
     </style>
 </head>
-<body class="max-w-md mx-auto min-h-screen pb-20">
+<body class="max-w-md mx-auto min-h-screen pb-32">
 
-    <header class="bg-blue-600 text-white p-4 sticky top-0 z-10 shadow-md">
-        <h1 class="text-xl font-bold mb-3">Mobile POS</h1>
+    <header class="bg-blue-700 text-white p-4 sticky top-0 z-10 shadow-lg">
+        <h1 class="text-xl font-bold mb-3 text-center">ប្រព័ន្ធគ្រប់គ្រងការលក់</h1>
         <input type="text" id="searchInput" onkeyup="filterProducts()" 
-               placeholder="🔍 Search products by name..." 
-               class="w-full p-2 rounded-lg text-black outline-none focus:ring-2 focus:ring-blue-300">
+               placeholder="🔍 ស្វែងរកឈ្មោះទំនិញ..." 
+               class="w-full p-3 rounded-xl text-black outline-none focus:ring-2 focus:ring-yellow-400">
     </header>
 
-    <section class="p-4 bg-white border-b">
-        <h2 class="text-sm font-semibold text-gray-500 uppercase mb-2">Add New Product</h2>
-        <div class="flex gap-2">
-            <input type="text" id="newName" placeholder="Product Name" class="flex-1 border p-2 rounded">
-            <input type="number" id="newPrice" placeholder="$ Price" class="w-24 border p-2 rounded">
-            <button onclick="addProduct()" class="bg-green-500 text-white px-4 py-2 rounded font-bold">+</button>
+    <section class="p-4 bg-white border-b shadow-sm">
+        <h2 class="text-sm font-bold text-blue-600 mb-3 underline">បន្ថែមទំនិញថ្មី</h2>
+        <div class="space-y-3">
+            <input type="text" id="newName" placeholder="ឈ្មោះទំនិញ" class="w-full border p-2 rounded-lg">
+            <div class="flex gap-2">
+                <input type="number" id="newPrice" placeholder="តម្លៃ ($)" class="flex-1 border p-2 rounded-lg">
+                <label class="bg-gray-100 border p-2 rounded-lg cursor-pointer text-sm flex items-center">
+                    📷 រូបភាព
+                    <input type="file" id="newImage" accept="image/*" class="hidden" onchange="previewImage(this)">
+                </label>
+            </div>
+            <div id="imgPreviewArea" class="hidden text-xs text-green-600 italic">✓ បានជ្រើសរើសរូបភាព</div>
+            <button onclick="addProduct()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-800 transition">
+                បញ្ចូលក្នុងបញ្ជី
+            </button>
         </div>
     </section>
 
     <main class="p-4" id="productList">
         </main>
 
-    <footer class="fixed bottom-0 w-full max-w-md bg-white border-t p-4 flex justify-between items-center shadow-lg">
+    <footer class="fixed bottom-0 w-full max-w-md bg-white border-t p-4 flex justify-between items-center shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
         <div>
-            <p class="text-gray-500 text-xs">Items: <span id="itemCount">0</span></p>
-            <p class="text-xl font-bold text-blue-600">Total: $<span id="totalPrice">0.00</span></p>
+            <p class="text-gray-500 text-sm">ចំនួន: <span id="itemCount" class="font-bold">0</span></p>
+            <p class="text-2xl font-bold text-red-600">$<span id="totalPrice">0.00</span></p>
         </div>
-        <button class="bg-blue-600 text-white px-6 py-2 rounded-full font-bold shadow-md active:bg-blue-700">
-            CHECKOUT
+        <button class="bg-green-600 text-white px-8 py-3 rounded-xl font-bold shadow-md active:scale-95 transition">
+            ទូទាត់ប្រាក់
         </button>
     </footer>
 
     <script>
-        // Load data from LocalStorage or use defaults
-        let products = JSON.parse(localStorage.getItem('pos_products')) || [
-            { id: 1, name: "Espresso", price: 3.50 },
-            { id: 2, name: "Iced Latte", price: 4.25 },
-            { id: 3, name: "Croissant", price: 2.75 }
-        ];
+        let products = JSON.parse(localStorage.getItem('kh_pos_products')) || [];
+        let currentBase64Image = "";
+
+        // Function to convert image to Base64
+        function previewImage(input) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                currentBase64Image = reader.result;
+                document.getElementById('imgPreviewArea').classList.remove('hidden');
+            }
+            if (file) { reader.readAsDataURL(file); }
+        }
 
         function renderProducts(data = products) {
             const list = document.getElementById('productList');
@@ -56,15 +72,16 @@
             
             data.forEach(product => {
                 const div = document.createElement('div');
-                div.className = "product-card bg-white p-4 rounded-xl shadow-sm mb-3 flex justify-between items-center border border-gray-100";
+                div.className = "bg-white p-3 rounded-xl shadow-sm mb-3 flex items-center border border-gray-100";
                 div.innerHTML = `
-                    <div>
+                    <img src="${product.image || 'https://via.placeholder.com/60'}" class="img-preview mr-3">
+                    <div class="flex-1">
                         <h3 class="font-bold text-gray-800">${product.name}</h3>
-                        <p class="text-blue-500 font-semibold">$${product.price.toFixed(2)}</p>
+                        <p class="text-blue-600 font-bold">$${product.price.toFixed(2)}</p>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <button onclick="deleteProduct(${product.id})" class="text-red-400 text-xs mr-2">Delete</button>
-                        <button onclick="addToCart(${product.price})" class="bg-gray-100 text-blue-600 w-10 h-10 rounded-full font-bold border border-blue-100">Add</button>
+                    <div class="flex flex-col gap-2">
+                        <button onclick="addToCart(${product.price})" class="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg font-bold border border-blue-200">ទិញ</button>
+                        <button onclick="deleteProduct(${product.id})" class="text-red-400 text-xs text-center">លុប</button>
                     </div>
                 `;
                 list.appendChild(div);
@@ -76,13 +93,23 @@
             const price = parseFloat(document.getElementById('newPrice').value);
 
             if (name && price) {
-                const newProd = { id: Date.now(), name, price };
+                const newProd = { 
+                    id: Date.now(), 
+                    name: name, 
+                    price: price, 
+                    image: currentBase64Image 
+                };
                 products.push(newProd);
                 saveAndRender();
+                
+                // Reset fields
                 document.getElementById('newName').value = '';
                 document.getElementById('newPrice').value = '';
+                document.getElementById('newImage').value = '';
+                document.getElementById('imgPreviewArea').classList.add('hidden');
+                currentBase64Image = "";
             } else {
-                alert("Please enter both name and price!");
+                alert("សូមបញ្ចូលឈ្មោះ និងតម្លៃទំនិញ!");
             }
         }
 
@@ -93,16 +120,17 @@
         }
 
         function deleteProduct(id) {
-            products = products.filter(p => p.id !== id);
-            saveAndRender();
+            if(confirm("តើអ្នកប្រាកដថាចង់លុបឬ?")) {
+                products = products.filter(p => p.id !== id);
+                saveAndRender();
+            }
         }
 
         function saveAndRender() {
-            localStorage.setItem('pos_products', JSON.stringify(products));
+            localStorage.setItem('kh_pos_products', JSON.stringify(products));
             renderProducts();
         }
 
-        // Cart Logic (Simplistic for UI Demo)
         let total = 0;
         let count = 0;
         function addToCart(price) {
@@ -112,7 +140,6 @@
             document.getElementById('itemCount').innerText = count;
         }
 
-        // Initial Load
         renderProducts();
     </script>
 </body>
